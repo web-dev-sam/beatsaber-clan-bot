@@ -1,0 +1,1 @@
+git clone https://github.com/MindLaborDev/beatsaber-clan-bot.git . && npm install
