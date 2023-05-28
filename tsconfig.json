@@ -1,13 +1,9 @@
 {
 	"extends": "@sapphire/ts-config",
 	"compilerOptions": {
-		"rootDir": "./src",
-		"outDir": "./dist",
-		"target": "ESNext",
-		"lib": ["ES2023"],
-		"esModuleInterop": true,
-		"resolveJsonModule": true
+		"rootDir": "src",
+		"outDir": "dist",
+		"tsBuildInfoFile": "dist/.tsbuildinfo"
 	},
-	"include": ["src/**/*.ts"],
-	"exclude": ["node_modules"]
+	"include": ["src"]
 }
