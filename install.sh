@@ -1,1 +1,1 @@
-git clone https://github.com/MindLaborDev/beatsaber-clan-bot.git . && npm install
+git clone https://github.com/MindLaborDev/beatsaber-clan-bot.git . && ls && npm install
