@@ -1,0 +1,17 @@
+{
+    "type": "module",
+    "prettier": "@sapphire/prettier-config",
+    "eslintConfig": {
+        "extends": "@sapphire"
+    },
+    "dependencies": {
+        "@sapphire/framework": "^4.4.4",
+        "discord.js": "14.x",
+        "dotenv": "^16.0.3"
+    },
+    "devDependencies": {
+        "@sapphire/eslint-config": "^4.4.2",
+        "@sapphire/prettier-config": "^1.4.5",
+        "@sapphire/ts-config": "^4.0.0"
+    }
+}
