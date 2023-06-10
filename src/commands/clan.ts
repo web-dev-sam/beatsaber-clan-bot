@@ -42,7 +42,7 @@ export class ClanCommand extends Subcommand {
     }
 
     @Log('Create Clan command received')
-    @AllowedUsers('488324471657332736')
+    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async createClan(interaction: Subcommand.ChatInputCommandInteraction) {
         const clanName = interaction.options.getString('name');
@@ -74,7 +74,7 @@ export class ClanCommand extends Subcommand {
     }
 
     @Log('Get clan info command received')
-    @AllowedUsers('488324471657332736')
+    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async getClanInfo(interaction: Subcommand.ChatInputCommandInteraction) {
         const guildId = interaction.guildId;

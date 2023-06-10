@@ -20,7 +20,7 @@ export class PingCommand extends Command {
     }
 
     @Log('XP command received')
-    @AllowedUsers('488324471657332736')
+    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
         // const userDataMap = new Map<string, UserData>();

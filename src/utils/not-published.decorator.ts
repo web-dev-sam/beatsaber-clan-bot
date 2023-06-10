@@ -1,6 +1,6 @@
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 
-export function AllowedUsers(requiredUserId: string) {
+export function AllowedUsers(requiredUserIds: string[]) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         const originalMethod = descriptor.value;
 
@@ -8,7 +8,7 @@ export function AllowedUsers(requiredUserId: string) {
             const interaction: Subcommand.ChatInputCommandInteraction = args[0];
 
             const userID = interaction.options.getUser('user')?.id ?? interaction.user.id;
-            if (userID !== requiredUserId) {
+            if (!requiredUserIds.includes(userID)) {
                 await interaction.reply({ content: `https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif` });
                 return;
             }
