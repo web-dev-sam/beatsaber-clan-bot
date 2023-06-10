@@ -2,6 +2,7 @@
     "recommendations": [
         "esbenp.prettier-vscode",
         "rvest.vs-code-prettier-eslint",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "actboy168.tasks"
     ]
 }

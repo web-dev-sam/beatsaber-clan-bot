@@ -1,0 +1,14 @@
+{
+    "tasks": [
+        {
+            "label": "start",
+            "type": "shell",
+            "command": "pnpm run watch:start",
+            "options": {
+                "statusbar": {
+                    "label": "$(play) Start Discord Bot",
+                }
+            }
+        }
+    ]
+}
