@@ -12,7 +12,12 @@ export function Log(message: string) {
         const originalMethod = descriptor.value;
 
         descriptor.value = function (...args: any[]) {
-            console.log(message);
+            const interaction = args[0];
+            const discordNickname = interaction?.member?.nickname || 'unknown';
+            const discordUsername = interaction?.user?.username || 'unknown';
+            const discordDiscriminator = interaction?.user?.discriminator || 'unknown';
+            const discordUserId = interaction?.user?.id || 'unknown';
+            console.log(`[${discordNickname} (${discordUsername}#${discordDiscriminator}: ${discordUserId})] ${message}`);
 
             return originalMethod.apply(this, args);
         };
