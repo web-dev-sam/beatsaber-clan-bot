@@ -25,8 +25,8 @@ export class ModalHandler extends InteractionHandler {
         }
 
         // Check if the user typed "delete"
-        const deleteMessage = (interaction.components[0].components[0] as Partial<TextInputComponentData>).value;
-        if (deleteMessage !== "delete") {
+        const deleteMessage = (interaction.components[0].components[0] as Partial<TextInputComponentData>).value ?? "";
+        if (deleteMessage.toLowerCase() !== "delete") {
             await interaction.reply({
                 content: 'You did not type "delete". Aborting deletion.',
                 ephemeral: true
