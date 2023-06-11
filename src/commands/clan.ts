@@ -216,17 +216,19 @@ export class ClanCommand extends Subcommand {
         // modal.addComponents(firstActionRow, secondActionRow);
         // interaction.showModal(modal);
 
+        const memberId = interaction.options.getUser('user')?.id;
+        if (memberId == null) {
+            await interaction.reply({ content: `You must specify a user to perform a clan action on.` });
+            return;
+        }
+
         // Use buttons instead of a modal
         return interaction.reply({
             content: `Choose the action you want to perform on this user/member:`,
-            ephemeral: true,
             components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new ButtonBuilder().setCustomId('add-member').setLabel('Add').setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder().setCustomId('promote-member').setLabel('Promote').setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder().setCustomId('demote-member').setLabel('Demote').setStyle(ButtonStyle.Danger),
-                    new ButtonBuilder().setCustomId('kick-member').setLabel('Kick').setStyle(ButtonStyle.Danger),
-                    new ButtonBuilder().setCustomId('remove-member').setLabel('Remove').setStyle(ButtonStyle.Danger)
+                    new ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder().setCustomId(`remove-member|${memberId}`).setLabel('Remove').setStyle(ButtonStyle.Danger)
                 )
             ]
         });
