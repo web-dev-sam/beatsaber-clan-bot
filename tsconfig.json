@@ -3,7 +3,6 @@
 	"compilerOptions": {
 		"rootDir": "src",
 		"outDir": "dist",
-		"tsBuildInfoFile": "dist/.tsbuildinfo",
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"experimentalDecorators": true,

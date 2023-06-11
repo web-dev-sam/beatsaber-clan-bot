@@ -2,6 +2,7 @@ import { Command, type ChatInputCommand } from '@sapphire/framework';
 import { GuildCommand } from '../utils/guild-command.decorator';
 import { AllowedUsers } from '../utils/not-published.decorator';
 import { Log } from '../utils/log-command.decorator';
+import type { ChatInputCommandInteractionWithGuildId } from '../global';
 // import { ChannelType } from 'discord.js';
 
 // interface UserData {
@@ -22,7 +23,7 @@ export class PingCommand extends Command {
     @Log('XP command received')
     @AllowedUsers(['488324471657332736'])
     @GuildCommand
-    public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
+    public async chatInputRun(interaction: ChatInputCommandInteractionWithGuildId) {
         // const userDataMap = new Map<string, UserData>();
         // let allMessages = [];
         // for (const [channelId, channel] of guild.channels.cache) {

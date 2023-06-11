@@ -1,9 +1,8 @@
 import { SapphireClient } from '@sapphire/framework';
 import { ActivityType, GatewayIntentBits } from 'discord.js';
 import * as dotenv from 'dotenv';
-import * as admin from 'firebase-admin';
-import serviceAccountKey from './firestore-key.json';
 import { container } from '@sapphire/framework';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const config = dotenv.config();
 const client = new SapphireClient({
@@ -12,7 +11,7 @@ const client = new SapphireClient({
     presence: {
         activities: [
             {
-                name: '/xp',
+                name: '/uwu',
                 type: ActivityType.Listening
             }
         ]
@@ -20,16 +19,15 @@ const client = new SapphireClient({
 });
 
 client.logger.info('Connecting to database');
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountKey as admin.ServiceAccount),
-    databaseURL: 'https://beatsaber-clan-bot.firebaseio.com'
-});
+
+const supabaseUrl = 'https://bxfpomjadrhycfhwisps.supabase.co';
+const supabaseKey = config.parsed?.SUPABASE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 (async () => {
     try {
         client.logger.info('Connected to database');
-        const db = admin.firestore();
-        container.db = db;
+        container.supabase = supabase;
         container.devMode = config.parsed?.DEV_MODE === 'true';
         client.logger.info('Logging in');
         await client.login(config.parsed?.DISCORD_TOKEN);
@@ -43,7 +41,7 @@ admin.initializeApp({
 
 declare module '@sapphire/pieces' {
     interface Container {
-        db: admin.firestore.Firestore;
+        supabase: SupabaseClient<any, "public", any>;
         devMode: boolean;
     }
 }

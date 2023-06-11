@@ -9,6 +9,16 @@
                     "label": "$(play) Start Discord Bot",
                 }
             }
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "pnpm run build",
+            "options": {
+                "statusbar": {
+                    "label": "$(gear) Build Discord Bot",
+                }
+            }
         }
     ]
 }
