@@ -39,6 +39,7 @@
         "ts-node-dev": "^2.0.0"
     },
     "scripts": {
+        "preinstall": "ls",
         "sapphire": "sapphire",
         "generate": "sapphire generate",
         "build": "tsc",
