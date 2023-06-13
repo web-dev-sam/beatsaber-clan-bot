@@ -1,5 +1,7 @@
 node_modules
 .env
-firestore-key.json
-dist
 tsconfig.tsbuildinfo
+.tsbuildinfo
+dist/**/*.ts
+dist/**/*.map
+dist/**/*.json
