@@ -1,9 +1,8 @@
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChatInputCommand } from '@sapphire/framework';
 import { PaginatedMessageEmbedFields } from '@sapphire/discord.js-utilities';
-import { container } from '@sapphire/framework';
 import { GuildCommand } from '../utils/guild-command.decorator';
-import { AllowedUsers } from '../utils/not-published.decorator';
+import { AlphaFeature } from '../utils/alpha-feature.decorator';
 import { Log } from '../utils/log-command.decorator';
 import type { ChatInputCommandInteractionWithGuildId } from '../global';
 import {
@@ -13,8 +12,12 @@ import {
     TextInputStyle,
     type ModalActionRowComponentBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    PermissionsBitField
 } from 'discord.js';
+import { addMember, createClan, getClan } from '../utils/db';
+import { ROLE, replyPrivately, replyPublicly } from '../utils/general';
+import { CLAN_ALREADY_EXISTS, NO_CLAN_FOR_SERVER } from '../utils/messages';
 
 export class ClanCommand extends Subcommand {
     public constructor(context: Subcommand.Context, options: Subcommand.Options) {
@@ -67,122 +70,91 @@ export class ClanCommand extends Subcommand {
     }
 
     @Log('Get clan info command received')
-    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async getClanInfo(interaction: ChatInputCommandInteractionWithGuildId) {
         const guildId = interaction.guildId;
-        const response = await container.supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanDoesntExist = response.data == null || response.data.length === 0;
-        if (clanDoesntExist) {
-            await interaction.reply({ content: `A clan doesn't exist for this server. You can create one with \`/clan create\`` });
-            return;
+        const clan = await getClan(guildId);
+        if (clan == null) {
+            return await replyPrivately(interaction, NO_CLAN_FOR_SERVER);
         }
 
-        const clan = response.data[0];
         const clanName: string = clan.name;
         const clanTag: string = clan.clan_tag;
         const clanDescription: string = clan.description;
         const clanOwner: string = clan.owner_id;
         const clanCreatedAt = new Date(clan.created_at);
         const clanCreatedAtHammerTime = `<t:${Math.floor(clanCreatedAt.getTime() / 1000)}:D>`;
-
         new PaginatedMessageEmbedFields()
             .setTemplate({ title: 'Clan Info', color: 0x006080 })
             .setItems([
-                {
-                    name: 'Name',
-                    value: clanName,
-                    inline: true
-                },
-                {
-                    name: 'Tag',
-                    value: clanTag,
-                    inline: true
-                },
-                {
-                    name: 'Description',
-                    value: clanDescription,
-                    inline: true
-                },
-                {
-                    name: 'Owner',
-                    value: `<@${clanOwner}>`,
-                    inline: true
-                },
-                {
-                    name: 'Created At',
-                    value: clanCreatedAtHammerTime,
-                    inline: true
-                }
+                { name: 'Name', value: clanName, inline: true },
+                { name: 'Tag', value: clanTag, inline: true },
+                { name: 'Description', value: clanDescription, inline: true },
+                { name: 'Owner', value: `<@${clanOwner}>`, inline: true },
+                { name: 'Created At', value: clanCreatedAtHammerTime, inline: true }
             ])
             .setItemsPerPage(5)
             .make()
             .run(interaction);
+        return;
     }
 
     @Log('Create Clan command received')
-    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async createClan(interaction: ChatInputCommandInteractionWithGuildId) {
+
+        // Check if user is a server admin
+        const member = interaction.member;
+        if (member == null || !(member.permissions as PermissionsBitField).has(PermissionsBitField.Flags.Administrator)) {
+            return await replyPrivately(interaction, `You must be a server administrator to create a clan.`);
+        }
+
         // Check if clan already exists
         const guildId = interaction.guildId;
-        const { supabase } = container;
-        const snapshot = await supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanExists = snapshot.data && snapshot.data.length > 0;
-        if (clanExists) {
-            await interaction.reply({ content: `A clan already exists for this server. You can only have one clan per server.` });
-            return;
+        const existingClan = await getClan(guildId);
+        if (existingClan != null) {
+            return await replyPrivately(interaction, CLAN_ALREADY_EXISTS);
         }
 
+        // Get clan info
         const clanName = interaction.options.getString('name');
         const clanTag = interaction.options.getString('tag');
-        const clanDescription = interaction.options.getString('description');
-
-        // Create clan if it doesn't exist
-        const { user } = interaction;
-        const { id: ownerId } = user;
-        const { data: clanData, error } = await supabase.from('clans').insert([
-            {
-                guild_id: guildId,
-                name: clanName,
-                clan_tag: clanTag,
-                description: clanDescription,
-                owner_id: ownerId
-            }
-        ]);
-
-        // Check for errors
-        if (error) {
-            console.error(error);
-            await interaction.reply({ content: `There was an error creating your clan. Please try again later. Error Code: ${error.code}` });
+        const clanDescription = interaction.options.getString('description') ?? '';
+        if (clanName == null || clanTag == null) {
+            replyPrivately(interaction, `You must specify a name and tag for your clan.`);
             return;
         }
 
-        // We're done!
-        return interaction.reply({ content: `Clan ${clanName} has been created!` });
+        // Create clan if it doesn't exist
+        const ownerId = interaction.user.id;
+        const { error } = await createClan(guildId, clanName, clanTag, clanDescription, ownerId);
+        const clan = await getClan(guildId);
+        if (error || clan == null) {
+            console.error(error);
+            return await replyPrivately(
+                interaction,
+                `There was an error creating your clan. Please try again later. Error Code: ${error?.code ?? 'unknown'}`
+            );
+        }
+
+        await addMember(ownerId, clan.id, ROLE.OWNER);
+        return await replyPublicly(interaction, `Clan ${clanName} has been created!`);
     }
 
     @Log('Delete clan command received')
-    @AllowedUsers(['488324471657332736'])
     @GuildCommand
     public async deleteClan(interaction: ChatInputCommandInteractionWithGuildId) {
+
         // Check if clan exists
         const guildId = interaction.guildId;
-        const { supabase } = container;
-        const snapshot = await supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanDoesntExist = snapshot.data == null || snapshot.data.length === 0;
-        if (clanDoesntExist) {
-            await interaction.reply({ content: `A clan doesn't exist for this server. You can create one with \`/clan create\`` });
-            return;
+        const clan = await getClan(guildId);
+        if (clan == null) {
+            return await replyPrivately(interaction, NO_CLAN_FOR_SERVER);
         }
 
         // Check if user is owner of clan
-        const ownerId = snapshot.data[0].owner_id;
-        if (ownerId !== interaction.user.id) {
-            await interaction.reply({
-                content: `You are not the owner of this clan. Message <@${ownerId}> to delete the clan. Only they can do it.`
-            });
-            return;
+        if (clan.owner_id !== interaction.user.id) {
+            return await replyPrivately(interaction, `You are not the owner of this clan. Only the owner <@${clan.owner_id}> can delete the clan.`);
         }
 
         // Modal to confirm deletion
@@ -196,10 +168,11 @@ export class ClanCommand extends Subcommand {
         );
         modal.addComponents(firstActionRow);
         interaction.showModal(modal);
+        return;
     }
 
     @Log('Clan member command received')
-    @AllowedUsers(['488324471657332736'])
+    @AlphaFeature()
     @GuildCommand
     public async runMemberSubcommand(interaction: ChatInputCommandInteractionWithGuildId) {
         // const modal = new ModalBuilder().setCustomId('memberModal').setTitle('UwU Daddy-Chan');
@@ -218,8 +191,7 @@ export class ClanCommand extends Subcommand {
 
         const memberId = interaction.options.getUser('user')?.id;
         if (memberId == null) {
-            await interaction.reply({ content: `You must specify a user to perform a clan action on.` });
-            return;
+            return await replyPrivately(interaction, `You must specify a user to perform a clan action on.`);
         }
 
         // Use buttons instead of a modal

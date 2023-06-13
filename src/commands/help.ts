@@ -1,10 +1,7 @@
 import { Command, type ChatInputCommand } from '@sapphire/framework';
-import { GuildCommand } from '../utils/guild-command.decorator';
-import { AllowedUsers } from '../utils/not-published.decorator';
 import { Log } from '../utils/log-command.decorator';
 import type { ChatInputCommandInteractionWithGuildId } from '../global';
 import { PaginatedMessage } from '@sapphire/discord.js-utilities';
-import { EmbedBuilder } from 'discord.js';
 
 export class HelpCommand extends Command {
     public constructor(context: Command.Context, options: Command.Options) {
@@ -35,11 +32,6 @@ export class HelpCommand extends Command {
                     {
                         name: "/uwu",
                         value: "uwu",
-                        inline: false,
-                    },
-                    {
-                        name: "/xp",
-                        value: "Work In Progress...",
                         inline: false,
                     },
                 ])

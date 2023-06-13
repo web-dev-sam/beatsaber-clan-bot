@@ -4,8 +4,6 @@ exports.PingCommand = void 0;
 const tslib_1 = require("tslib");
 const discord_js_utilities_1 = require("@sapphire/discord.js-utilities");
 const framework_1 = require("@sapphire/framework");
-const guild_command_decorator_1 = require("../utils/guild-command.decorator");
-const not_published_decorator_1 = require("../utils/not-published.decorator");
 const log_command_decorator_1 = require("../utils/log-command.decorator");
 class PingCommand extends framework_1.Command {
     constructor(context, options) {
@@ -15,7 +13,7 @@ class PingCommand extends framework_1.Command {
         registry.registerChatInputCommand((builder) => builder.setName('ping').setDescription('Ping bot to see if it is alive'));
     }
     async chatInputRun(interaction) {
-        const msg = await interaction.reply({ content: `Pinging...`, ephemeral: false, fetchReply: true });
+        const msg = await interaction.reply({ content: `Pinging...`, ephemeral: true, fetchReply: true });
         if ((0, discord_js_utilities_1.isMessageInstance)(msg)) {
             const diff = msg.createdTimestamp - interaction.createdTimestamp;
             const ping = Math.round(this.container.client.ws.ping);
@@ -27,7 +25,6 @@ class PingCommand extends framework_1.Command {
 exports.PingCommand = PingCommand;
 tslib_1.__decorate([
     (0, log_command_decorator_1.Log)('Ping command received'),
-    guild_command_decorator_1.GuildCommand,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
     tslib_1.__metadata("design:returntype", Promise)

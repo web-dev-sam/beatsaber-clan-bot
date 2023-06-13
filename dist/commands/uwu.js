@@ -4,6 +4,7 @@ exports.UwUCommand = void 0;
 const tslib_1 = require("tslib");
 const framework_1 = require("@sapphire/framework");
 const log_command_decorator_1 = require("../utils/log-command.decorator");
+const general_1 = require("../utils/general");
 class UwUCommand extends framework_1.Command {
     constructor(context, options) {
         super(context, { ...options });
@@ -12,7 +13,7 @@ class UwUCommand extends framework_1.Command {
         registry.registerChatInputCommand((builder) => builder.setName('uwu').setDescription('uwu'));
     }
     async chatInputRun(interaction) {
-        return interaction.reply(`UwU`);
+        return (0, general_1.replyPublicly)(interaction, 'UwU');
     }
 }
 exports.UwUCommand = UwUCommand;

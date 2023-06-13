@@ -1,5 +1,6 @@
 import { Command, type ChatInputCommand } from '@sapphire/framework';
 import { Log } from '../utils/log-command.decorator';
+import { replyPublicly } from '../utils/general';
 
 export class UwUCommand extends Command {
     public constructor(context: Command.Context, options: Command.Options) {
@@ -12,6 +13,6 @@ export class UwUCommand extends Command {
 
     @Log('UwU command received')
     public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-        return interaction.reply(`UwU`);
+        return replyPublicly(interaction, 'UwU');
     }
 }

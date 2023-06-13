@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AllowedUsers = void 0;
+exports.AlphaFeature = void 0;
 const GOOSY = "488324471657332736";
 const LUCY = "396387614070145025";
 const DIDDY = "943561777369718845";
@@ -11,10 +11,10 @@ const KOOPY = "616628947966361601";
  * @param requiredUserIds - Array of user IDs that are allowed to execute the command.
  *
  * @example
- * @AllowedUsers(['1234567890', '0987654321'])
+ * @NotImplemented(['1234567890', '0987654321'])
  * public async myCommand(interaction: Subcommand.ChatInputCommandInteraction) { ... }
  */
-function AllowedUsers() {
+function AlphaFeature() {
     return function (target, propertyKey, descriptor) {
         const originalMethod = descriptor.value;
         descriptor.value = async function (...args) {
@@ -29,5 +29,5 @@ function AllowedUsers() {
         return descriptor;
     };
 }
-exports.AllowedUsers = AllowedUsers;
-//# sourceMappingURL=not-published.decorator.js.map
+exports.AlphaFeature = AlphaFeature;
+//# sourceMappingURL=alpha-feature.decorator.js.map

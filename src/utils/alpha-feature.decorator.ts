@@ -11,10 +11,10 @@ const KOOPY = "616628947966361601";
  * @param requiredUserIds - Array of user IDs that are allowed to execute the command.
  * 
  * @example
- * @AllowedUsers(['1234567890', '0987654321'])
+ * @NotImplemented(['1234567890', '0987654321'])
  * public async myCommand(interaction: Subcommand.ChatInputCommandInteraction) { ... }
  */
-export function AllowedUsers(requiredUserIds: string[]) {
+export function AlphaFeature() {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         const originalMethod = descriptor.value;
 
@@ -22,7 +22,7 @@ export function AllowedUsers(requiredUserIds: string[]) {
             const interaction: Subcommand.ChatInputCommandInteraction = args[0];
 
             const userID = interaction.options.getUser('user')?.id ?? interaction.user.id;
-            if (![GOOSY, LUCY, DIDDY, KOOPY, ...requiredUserIds].includes(userID)) {
+            if (![GOOSY, LUCY, DIDDY, KOOPY].includes(userID)) {
                 await interaction.reply({ content: `https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif` });
                 return;
             }

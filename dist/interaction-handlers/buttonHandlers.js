@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ButtonHandler = void 0;
 const framework_1 = require("@sapphire/framework");
-const framework_2 = require("@sapphire/framework");
-const { supabase } = framework_2.container;
+const general_1 = require("../utils/general");
+const db_1 = require("../utils/db");
+const messages_1 = require("../utils/messages");
 class ButtonHandler extends framework_1.InteractionHandler {
     constructor(ctx, options) {
         super(ctx, {
@@ -17,11 +18,7 @@ class ButtonHandler extends framework_1.InteractionHandler {
         const args = parts.slice(1);
         const guildId = interaction.guildId;
         if (guildId == null) {
-            await interaction.reply({
-                content: 'This command can only be used in a server.',
-                ephemeral: true
-            });
-            return;
+            return await (0, general_1.replyPrivately)(interaction, 'This command can only be used in a server.');
         }
         switch (action) {
             case 'add-member':
@@ -31,88 +28,52 @@ class ButtonHandler extends framework_1.InteractionHandler {
                 this.removeMember(interaction, args, guildId);
                 break;
         }
+        return;
     }
     async addMember(interaction, args, guildId) {
         const memberId = args[0];
         // Check if the server has a clan
-        const clan = await this.ensureClanExists(interaction, guildId);
+        const clan = await (0, db_1.getClan)(guildId);
         if (clan == null) {
-            return;
+            return await (0, general_1.replyPrivately)(interaction, messages_1.NO_CLAN_FOR_SERVER);
         }
         // Check if the user is authorized to add members
-        // You need to be the owner or an admin to add members
-        if (clan.owner_id !== interaction.user.id) {
-            const ADMIN_ROLE = 1;
-            const admin = await supabase
-                .from('members')
-                .select('*')
-                .eq('discord_id', interaction.user.id)
-                .eq('clan_id', clan.id)
-                .eq('role', ADMIN_ROLE);
-            if (admin.data == null || admin.data.length === 0) {
-                await interaction.reply({
-                    content: 'You are not authorized to add members to this clan.',
-                    ephemeral: true
-                });
-                return;
+        const isOwner = clan.owner_id !== interaction.user.id;
+        if (isOwner) {
+            const member = await (0, db_1.getMember)(interaction.user.id, guildId);
+            const isAdmin = member == null || member.role !== general_1.ROLE.ADMIN;
+            if (!isAdmin) {
+                return await (0, general_1.replyPrivately)(interaction, `You are not authorized to add members to this clan. Only the clan owner <@${clan.owner_id}> can do that.`);
             }
         }
         // Check if the user is already a member
-        const isMember = await supabase.from('members').select('*').eq('discord_id', memberId).eq('clan_id', clan.id);
-        if (isMember.data != null && isMember.data.length > 0) {
-            await interaction.reply({
-                content: 'This user is already a member of this clan.',
-                ephemeral: true
-            });
-            return;
+        const member = await (0, db_1.getMember)(memberId, guildId);
+        if (member != null) {
+            return await (0, general_1.replyPrivately)(interaction, `<@${memberId}> is already a member of this clan.`);
         }
         // Add the user to the clan
-        await supabase.from('members').insert([{ discord_id: memberId, clan_id: clan.id, role: 0 }]);
-        await interaction.reply({
-            content: `User <@${memberId}> has been added to the clan.`
-        });
+        await (0, db_1.addMember)(memberId, clan.id);
+        return await (0, general_1.replyPublicly)(interaction, `User <@${memberId}> has been added to the clan.`);
     }
     async removeMember(interaction, args, guildId) {
         const memberId = args[0];
         // Check if the server has a clan
-        const clan = await this.ensureClanExists(interaction, guildId);
+        const clan = await (0, db_1.getClan)(guildId);
         if (clan == null) {
-            return;
+            return await (0, general_1.replyPrivately)(interaction, messages_1.NO_CLAN_FOR_SERVER);
         }
         // Check if the user is authorized to remove members
-        // You need to be the owner to remove members
         if (clan.owner_id !== interaction.user.id) {
-            await interaction.reply({
-                content: `You are not authorized to remove members from this clan. Only the clan owner <@${clan.owner_id}> can do that.`,
-                ephemeral: true
-            });
-            return;
+            return await (0, general_1.replyPrivately)(interaction, `You are not authorized to remove members from this clan. Only the clan owner <@${clan.owner_id}> can do that.`);
         }
         // Check if the user is a member
-        const isMember = await supabase.from('members').select('*').eq('discord_id', memberId).eq('clan_id', clan.id);
-        if (isMember.data == null || isMember.data.length === 0) {
-            await interaction.reply({
-                content: 'This user is not a member of this clan.',
-                ephemeral: true
-            });
-            return;
+        const member = (0, db_1.getMember)(memberId, guildId);
+        if (member == null) {
+            return await (0, general_1.replyPrivately)(interaction, `This user is not a member of this clan.`);
         }
         // Remove the user from the clan
-        await supabase.from('members').delete().eq('discord_id', memberId).eq('clan_id', clan.id);
-        await interaction.reply({
-            content: `User <@${memberId}> has been removed from the clan.`
-        });
-    }
-    async ensureClanExists(interaction, guildId) {
-        const clans = await supabase.from('clans').select('*').eq('guild_id', guildId);
-        if (clans.data == null || clans.data.length === 0) {
-            await interaction.reply({
-                content: 'This server does not have a clan. You can create one with `/clan create`.',
-                ephemeral: true
-            });
-            return null;
-        }
-        return clans.data[0];
+        await (0, db_1.removeMember)(memberId, guildId);
+        return await (0, general_1.replyPublicly)(interaction, `User <@${memberId}> has been removed from the clan.`);
     }
 }
 exports.ButtonHandler = ButtonHandler;

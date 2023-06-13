@@ -3,11 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HelpCommand = void 0;
 const tslib_1 = require("tslib");
 const framework_1 = require("@sapphire/framework");
-const guild_command_decorator_1 = require("../utils/guild-command.decorator");
-const not_published_decorator_1 = require("../utils/not-published.decorator");
 const log_command_decorator_1 = require("../utils/log-command.decorator");
 const discord_js_utilities_1 = require("@sapphire/discord.js-utilities");
-const discord_js_1 = require("discord.js");
 class HelpCommand extends framework_1.Command {
     constructor(context, options) {
         super(context, { ...options });
@@ -34,11 +31,6 @@ class HelpCommand extends framework_1.Command {
             {
                 name: "/uwu",
                 value: "uwu",
-                inline: false,
-            },
-            {
-                name: "/xp",
-                value: "Work In Progress...",
                 inline: false,
             },
         ]))

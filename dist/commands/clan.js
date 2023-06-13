@@ -5,11 +5,13 @@ const tslib_1 = require("tslib");
 const plugin_subcommands_1 = require("@sapphire/plugin-subcommands");
 const framework_1 = require("@sapphire/framework");
 const discord_js_utilities_1 = require("@sapphire/discord.js-utilities");
-const framework_2 = require("@sapphire/framework");
 const guild_command_decorator_1 = require("../utils/guild-command.decorator");
-const not_published_decorator_1 = require("../utils/not-published.decorator");
+const alpha_feature_decorator_1 = require("../utils/alpha-feature.decorator");
 const log_command_decorator_1 = require("../utils/log-command.decorator");
 const discord_js_1 = require("discord.js");
+const db_1 = require("../utils/db");
+const general_1 = require("../utils/general");
+const messages_1 = require("../utils/messages");
 class ClanCommand extends plugin_subcommands_1.Subcommand {
     constructor(context, options) {
         super(context, {
@@ -54,13 +56,10 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
     }
     async getClanInfo(interaction) {
         const guildId = interaction.guildId;
-        const response = await framework_2.container.supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanDoesntExist = response.data == null || response.data.length === 0;
-        if (clanDoesntExist) {
-            await interaction.reply({ content: `A clan doesn't exist for this server. You can create one with \`/clan create\`` });
-            return;
+        const clan = await (0, db_1.getClan)(guildId);
+        if (clan == null) {
+            return await (0, general_1.replyPrivately)(interaction, messages_1.NO_CLAN_FOR_SERVER);
         }
-        const clan = response.data[0];
         const clanName = clan.name;
         const clanTag = clan.clan_tag;
         const clanDescription = clan.description;
@@ -70,87 +69,58 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
         new discord_js_utilities_1.PaginatedMessageEmbedFields()
             .setTemplate({ title: 'Clan Info', color: 0x006080 })
             .setItems([
-            {
-                name: 'Name',
-                value: clanName,
-                inline: true
-            },
-            {
-                name: 'Tag',
-                value: clanTag,
-                inline: true
-            },
-            {
-                name: 'Description',
-                value: clanDescription,
-                inline: true
-            },
-            {
-                name: 'Owner',
-                value: `<@${clanOwner}>`,
-                inline: true
-            },
-            {
-                name: 'Created At',
-                value: clanCreatedAtHammerTime,
-                inline: true
-            }
+            { name: 'Name', value: clanName, inline: true },
+            { name: 'Tag', value: clanTag, inline: true },
+            { name: 'Description', value: clanDescription, inline: true },
+            { name: 'Owner', value: `<@${clanOwner}>`, inline: true },
+            { name: 'Created At', value: clanCreatedAtHammerTime, inline: true }
         ])
             .setItemsPerPage(5)
             .make()
             .run(interaction);
+        return;
     }
     async createClan(interaction) {
+        // Check if user is a server admin
+        const member = interaction.member;
+        if (member == null || !member.permissions.has(discord_js_1.PermissionsBitField.Flags.Administrator)) {
+            return await (0, general_1.replyPrivately)(interaction, `You must be a server administrator to create a clan.`);
+        }
         // Check if clan already exists
         const guildId = interaction.guildId;
-        const { supabase } = framework_2.container;
-        const snapshot = await supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanExists = snapshot.data && snapshot.data.length > 0;
-        if (clanExists) {
-            await interaction.reply({ content: `A clan already exists for this server. You can only have one clan per server.` });
-            return;
+        const existingClan = await (0, db_1.getClan)(guildId);
+        if (existingClan != null) {
+            return await (0, general_1.replyPrivately)(interaction, messages_1.CLAN_ALREADY_EXISTS);
         }
+        // Get clan info
         const clanName = interaction.options.getString('name');
         const clanTag = interaction.options.getString('tag');
-        const clanDescription = interaction.options.getString('description');
-        // Create clan if it doesn't exist
-        const { user } = interaction;
-        const { id: ownerId } = user;
-        const { data: clanData, error } = await supabase.from('clans').insert([
-            {
-                guild_id: guildId,
-                name: clanName,
-                clan_tag: clanTag,
-                description: clanDescription,
-                owner_id: ownerId
-            }
-        ]);
-        // Check for errors
-        if (error) {
-            console.error(error);
-            await interaction.reply({ content: `There was an error creating your clan. Please try again later. Error Code: ${error.code}` });
+        const clanDescription = interaction.options.getString('description') ?? '';
+        if (clanName == null || clanTag == null) {
+            (0, general_1.replyPrivately)(interaction, `You must specify a name and tag for your clan.`);
             return;
         }
-        // We're done!
-        return interaction.reply({ content: `Clan ${clanName} has been created!` });
+        // Create clan if it doesn't exist
+        const ownerId = interaction.user.id;
+        const { error } = await (0, db_1.createClan)(guildId, clanName, clanTag, clanDescription, ownerId);
+        const clan = await (0, db_1.getClan)(guildId);
+        if (error || clan == null) {
+            console.error(error);
+            return await (0, general_1.replyPrivately)(interaction, `There was an error creating your clan. Please try again later. Error Code: ${error?.code ?? 'unknown'}`);
+        }
+        await (0, db_1.addMember)(ownerId, clan.id, general_1.ROLE.OWNER);
+        return await (0, general_1.replyPublicly)(interaction, `Clan ${clanName} has been created!`);
     }
     async deleteClan(interaction) {
         // Check if clan exists
         const guildId = interaction.guildId;
-        const { supabase } = framework_2.container;
-        const snapshot = await supabase.from('clans').select('*').eq('guild_id', guildId);
-        const clanDoesntExist = snapshot.data == null || snapshot.data.length === 0;
-        if (clanDoesntExist) {
-            await interaction.reply({ content: `A clan doesn't exist for this server. You can create one with \`/clan create\`` });
-            return;
+        const clan = await (0, db_1.getClan)(guildId);
+        if (clan == null) {
+            return await (0, general_1.replyPrivately)(interaction, messages_1.NO_CLAN_FOR_SERVER);
         }
         // Check if user is owner of clan
-        const ownerId = snapshot.data[0].owner_id;
-        if (ownerId !== interaction.user.id) {
-            await interaction.reply({
-                content: `You are not the owner of this clan. Message <@${ownerId}> to delete the clan. Only they can do it.`
-            });
-            return;
+        if (clan.owner_id !== interaction.user.id) {
+            return await (0, general_1.replyPrivately)(interaction, `You are not the owner of this clan. Only the owner <@${clan.owner_id}> can delete the clan.`);
         }
         // Modal to confirm deletion
         const modal = new discord_js_1.ModalBuilder().setCustomId('delete-clan-modal').setTitle('Are you sure?');
@@ -161,6 +131,7 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
             .setRequired(true));
         modal.addComponents(firstActionRow);
         interaction.showModal(modal);
+        return;
     }
     async runMemberSubcommand(interaction) {
         // const modal = new ModalBuilder().setCustomId('memberModal').setTitle('UwU Daddy-Chan');
@@ -178,8 +149,7 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
         // interaction.showModal(modal);
         const memberId = interaction.options.getUser('user')?.id;
         if (memberId == null) {
-            await interaction.reply({ content: `You must specify a user to perform a clan action on.` });
-            return;
+            return await (0, general_1.replyPrivately)(interaction, `You must specify a user to perform a clan action on.`);
         }
         // Use buttons instead of a modal
         return interaction.reply({
@@ -193,7 +163,6 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
 exports.ClanCommand = ClanCommand;
 tslib_1.__decorate([
     (0, log_command_decorator_1.Log)('Get clan info command received'),
-    (0, not_published_decorator_1.AllowedUsers)(['488324471657332736']),
     guild_command_decorator_1.GuildCommand,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
@@ -201,7 +170,6 @@ tslib_1.__decorate([
 ], ClanCommand.prototype, "getClanInfo", null);
 tslib_1.__decorate([
     (0, log_command_decorator_1.Log)('Create Clan command received'),
-    (0, not_published_decorator_1.AllowedUsers)(['488324471657332736']),
     guild_command_decorator_1.GuildCommand,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
@@ -209,7 +177,6 @@ tslib_1.__decorate([
 ], ClanCommand.prototype, "createClan", null);
 tslib_1.__decorate([
     (0, log_command_decorator_1.Log)('Delete clan command received'),
-    (0, not_published_decorator_1.AllowedUsers)(['488324471657332736']),
     guild_command_decorator_1.GuildCommand,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
@@ -217,7 +184,7 @@ tslib_1.__decorate([
 ], ClanCommand.prototype, "deleteClan", null);
 tslib_1.__decorate([
     (0, log_command_decorator_1.Log)('Clan member command received'),
-    (0, not_published_decorator_1.AllowedUsers)(['488324471657332736']),
+    (0, alpha_feature_decorator_1.AlphaFeature)(),
     guild_command_decorator_1.GuildCommand,
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [Object]),
