@@ -197,6 +197,7 @@ export class ClanCommand extends Subcommand {
         // Use buttons instead of a modal
         return interaction.reply({
             content: `Choose the action you want to perform on this user/member:`,
+            ephemeral: true,
             components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(ButtonStyle.Primary),

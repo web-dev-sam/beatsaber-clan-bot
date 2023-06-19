@@ -154,6 +154,7 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
         // Use buttons instead of a modal
         return interaction.reply({
             content: `Choose the action you want to perform on this user/member:`,
+            ephemeral: true,
             components: [
                 new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(discord_js_1.ButtonStyle.Primary), new discord_js_1.ButtonBuilder().setCustomId(`remove-member|${memberId}`).setLabel('Remove').setStyle(discord_js_1.ButtonStyle.Danger))
             ]

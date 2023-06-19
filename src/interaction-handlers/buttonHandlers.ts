@@ -41,12 +41,17 @@ export class ButtonHandler extends InteractionHandler {
             return await replyPrivately(interaction, NO_CLAN_FOR_SERVER);
         }
 
+        // Check if the owner is trying to add themselves
+        if (memberId === clan.owner_id) {
+            return await replyPrivately(interaction, `You can't add yourself to the clan. You are the owner, silly!`);
+        }
+
         // Check if the user is authorized to add members
         const isOwner = clan.owner_id !== interaction.user.id;
-        if (isOwner) {
+        if (!isOwner) {
             const member = await getMember(interaction.user.id, guildId);
-            const isAdmin = member == null || member.role !== ROLE.ADMIN;
-            if (!isAdmin) {
+            const isNotAdmin = member == null || member.role !== ROLE.ADMIN;
+            if (isNotAdmin) {
                 return await replyPrivately(
                     interaction,
                     `You are not authorized to add members to this clan. Only the clan owner <@${clan.owner_id}> can do that.`
@@ -62,7 +67,7 @@ export class ButtonHandler extends InteractionHandler {
 
         // Add the user to the clan
         await addMember(memberId, clan.id);
-        return await replyPublicly(interaction, `User <@${memberId}> has been added to the clan.`);
+        return await replyPrivately(interaction, `User <@${memberId}> has been added to the clan.`);
     }
 
     private async removeMember(interaction: ButtonInteraction, args: string[], guildId: string) {
@@ -72,6 +77,11 @@ export class ButtonHandler extends InteractionHandler {
         const clan = await getClan(guildId);
         if (clan == null) {
             return await replyPrivately(interaction, NO_CLAN_FOR_SERVER);
+        }
+
+        // Check if the owner is trying to remove themselves
+        if (memberId === clan.owner_id) {
+            return await replyPrivately(interaction, `Nice try, but you can't remove yourself from the clan. You are the owner! To delete the clan, use **/clan delete**.`);
         }
 
         // Check if the user is authorized to remove members
@@ -90,6 +100,6 @@ export class ButtonHandler extends InteractionHandler {
 
         // Remove the user from the clan
         await removeMember(memberId, guildId);
-        return await replyPublicly(interaction, `User <@${memberId}> has been removed from the clan.`);
+        return await replyPrivately(interaction, `User <@${memberId}> has been removed from the clan.`);
     }
 }
