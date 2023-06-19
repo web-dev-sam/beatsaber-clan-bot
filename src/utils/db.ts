@@ -1,6 +1,7 @@
 
 import { container } from '@sapphire/framework';
 import { ROLE } from './general';
+import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 const { supabase, devMode } = container;
 
 const TABLE = {
@@ -20,12 +21,35 @@ export async function getClan(guildId: string) {
     return clans.data[0];
 }
 
-export async function getMember(discord_id: string, guildId: string) {
-    const members = await supabase.from(TABLE.MEMBERS).select('*').eq('discord_id', discord_id).eq('guild_id', guildId);
+export async function getMemberByClan(discord_id: string, clanId: string) {
+    const members = await supabase.from(TABLE.MEMBERS).select('*').eq('discord_id', discord_id).eq('clan_id', clanId);
     if (members.data == null || members.data.length === 0) {
         return null;
     }
     return members.data[0];
+}
+
+/** We need to join since member table doesnt have guild id, only clan id */
+export async function getMember(discord_id: string, guildId: string) {
+    const members = await supabase
+        .from(TABLE.CLANS)
+        .select(TABLE.MEMBERS + ` (discord_id, clan_id, role)`)
+        .eq(TABLE.MEMBERS + '.discord_id', discord_id)
+        .eq('guild_id', guildId) as PostgrestSingleResponse<{
+            members_dev: {
+                discord_id: any;
+                clan_id: any;
+                role: any;
+            }[];
+        }[]>;
+    if (members.data == null || members.data.length === 0) {
+        return null;
+    }
+    return members.data[0].members_dev[0];
+}
+
+export async function changeMemberRole(discord_id: string, clanId: string, role: ROLE) {
+    return await supabase.from(TABLE.MEMBERS).update({ role }).eq('discord_id', discord_id).eq('clan_id', clanId);
 }
 
 export async function removeMember(discord_id: string, guildId: string) {

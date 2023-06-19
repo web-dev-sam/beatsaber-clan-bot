@@ -21,9 +21,8 @@ export function AlphaFeature() {
         descriptor.value = async function(...args: any[]) {
             const interaction: Subcommand.ChatInputCommandInteraction = args[0];
 
-            const userID = interaction.options.getUser('user')?.id ?? interaction.user.id;
-            if (![GOOSY, LUCY, DIDDY, KOOPY].includes(userID)) {
-                await interaction.reply({ content: `https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif` });
+            if (![GOOSY, LUCY, DIDDY, KOOPY].includes(interaction.user.id)) {
+                await interaction.reply({ content: `no` });
                 return;
             }
 

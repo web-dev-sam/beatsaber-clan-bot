@@ -108,7 +108,6 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
             console.error(error);
             return await (0, general_1.replyPrivately)(interaction, `There was an error creating your clan. Please try again later. Error Code: ${error?.code ?? 'unknown'}`);
         }
-        await (0, db_1.addMember)(ownerId, clan.id, general_1.ROLE.OWNER);
         return await (0, general_1.replyPublicly)(interaction, `Clan ${clanName} has been created!`);
     }
     async deleteClan(interaction) {
@@ -156,7 +155,7 @@ class ClanCommand extends plugin_subcommands_1.Subcommand {
             content: `Choose the action you want to perform on this user/member:`,
             ephemeral: true,
             components: [
-                new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(discord_js_1.ButtonStyle.Primary), new discord_js_1.ButtonBuilder().setCustomId(`remove-member|${memberId}`).setLabel('Remove').setStyle(discord_js_1.ButtonStyle.Danger))
+                new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(discord_js_1.ButtonStyle.Primary), new discord_js_1.ButtonBuilder().setCustomId(`change-role-member|${memberId}`).setLabel('Change Role').setStyle(discord_js_1.ButtonStyle.Success), new discord_js_1.ButtonBuilder().setCustomId(`remove-member|${memberId}`).setLabel('Remove').setStyle(discord_js_1.ButtonStyle.Danger))
             ]
         });
     }

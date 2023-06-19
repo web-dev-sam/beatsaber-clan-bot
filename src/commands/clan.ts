@@ -137,7 +137,6 @@ export class ClanCommand extends Subcommand {
             );
         }
 
-        await addMember(ownerId, clan.id, ROLE.OWNER);
         return await replyPublicly(interaction, `Clan ${clanName} has been created!`);
     }
 
@@ -201,6 +200,7 @@ export class ClanCommand extends Subcommand {
             components: [
                 new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder().setCustomId(`add-member|${memberId}`).setLabel('Add').setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder().setCustomId(`change-role-member|${memberId}`).setLabel('Change Role').setStyle(ButtonStyle.Success),
                     new ButtonBuilder().setCustomId(`remove-member|${memberId}`).setLabel('Remove').setStyle(ButtonStyle.Danger)
                 )
             ]

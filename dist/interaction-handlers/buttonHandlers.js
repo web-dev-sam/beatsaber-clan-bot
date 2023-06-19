@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ButtonHandler = void 0;
 const framework_1 = require("@sapphire/framework");
+const discord_js_1 = require("discord.js");
 const general_1 = require("../utils/general");
 const db_1 = require("../utils/db");
 const messages_1 = require("../utils/messages");
@@ -27,6 +28,9 @@ class ButtonHandler extends framework_1.InteractionHandler {
             case 'remove-member':
                 this.removeMember(interaction, args, guildId);
                 break;
+            case 'change-role-member':
+                this.changeRoleMember(interaction, args, guildId);
+                break;
         }
         return;
     }
@@ -42,7 +46,7 @@ class ButtonHandler extends framework_1.InteractionHandler {
             return await (0, general_1.replyPrivately)(interaction, `You can't add yourself to the clan. You are the owner, silly!`);
         }
         // Check if the user is authorized to add members
-        const isOwner = clan.owner_id !== interaction.user.id;
+        const isOwner = clan.owner_id === interaction.user.id;
         if (!isOwner) {
             const member = await (0, db_1.getMember)(interaction.user.id, guildId);
             const isNotAdmin = member == null || member.role !== general_1.ROLE.ADMIN;
@@ -57,7 +61,7 @@ class ButtonHandler extends framework_1.InteractionHandler {
         }
         // Add the user to the clan
         await (0, db_1.addMember)(memberId, clan.id);
-        return await (0, general_1.replyPrivately)(interaction, `User <@${memberId}> has been added to the clan.`);
+        return await (0, general_1.replyPublicly)(interaction, `User <@${memberId}> has been added to the clan.`);
     }
     async removeMember(interaction, args, guildId) {
         const memberId = args[0];
@@ -81,7 +85,27 @@ class ButtonHandler extends framework_1.InteractionHandler {
         }
         // Remove the user from the clan
         await (0, db_1.removeMember)(memberId, guildId);
-        return await (0, general_1.replyPrivately)(interaction, `User <@${memberId}> has been removed from the clan.`);
+        return await (0, general_1.replyPublicly)(interaction, `User <@${memberId}> has been removed from the clan.`);
+    }
+    async changeRoleMember(interaction, args, guildId) {
+        const memberId = args[0];
+        // Check if the server has a clan
+        const clan = await (0, db_1.getClan)(guildId);
+        if (clan == null) {
+            return await (0, general_1.replyPrivately)(interaction, messages_1.NO_CLAN_FOR_SERVER);
+        }
+        // Check if the member is in the clan
+        const member = await (0, db_1.getMember)(memberId, guildId);
+        if (member == null) {
+            return await (0, general_1.replyPrivately)(interaction, `The user <@${memberId}> is not a member of this clan.`);
+        }
+        return await interaction.reply({
+            content: `Select the new role for <@${memberId}>`,
+            ephemeral: true,
+            components: [
+                new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.StringSelectMenuBuilder().setCustomId(`change-role-member-select|${memberId}`).addOptions(new discord_js_1.StringSelectMenuOptionBuilder().setLabel('Member').setValue('member').setDescription('Member role'), new discord_js_1.StringSelectMenuOptionBuilder().setLabel('Admin').setValue('admin').setDescription('Admin role')))
+            ]
+        });
     }
 }
 exports.ButtonHandler = ButtonHandler;

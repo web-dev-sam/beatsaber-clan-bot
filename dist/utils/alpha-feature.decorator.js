@@ -19,9 +19,8 @@ function AlphaFeature() {
         const originalMethod = descriptor.value;
         descriptor.value = async function (...args) {
             const interaction = args[0];
-            const userID = interaction.options.getUser('user')?.id ?? interaction.user.id;
-            if (![GOOSY, LUCY, DIDDY, KOOPY].includes(userID)) {
-                await interaction.reply({ content: `https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif` });
+            if (![GOOSY, LUCY, DIDDY, KOOPY].includes(interaction.user.id)) {
+                await interaction.reply({ content: `no` });
                 return;
             }
             return originalMethod.apply(this, args);
